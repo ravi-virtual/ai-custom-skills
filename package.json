@@ -1,10 +1,10 @@
 {
   "name": "ai-custom-skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A collection of AI skills for enhanced agentic capabilities.",
   "main": "index.js",
   "bin": {
-    "custom-skills": "./index.js"
+    "ai-custom-skills": "./index.js"
   },
   "keywords": [
     "ai",
