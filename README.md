@@ -5,7 +5,7 @@ A professional collection of AI skills for enhanced agentic capabilities. Each s
 ## Installation
 
 ```bash
-npm install @your-username/my-skills-collection
+npm install ai-custom-skills
 ```
 
 ## CLI Usage
@@ -31,7 +31,7 @@ This project follows the manifest-driven architecture used by professional AI sk
 - **`skills.json`**: The central manifest file for skill discovery.
 - **`index.js`**: Lightweight CLI for skill management.
 - **`skills/`**: Root directory for all individual skill folders.
-  - **`<skill-name>/`**: 
+  - **`<skill-name>/`**:
     - **`SKILL.md`**: Core instructions for the AI agent for this specific skill.
     - **`scripts/`**: Executable scripts specific to this skill.
     - **`examples/`**: Usage guides and reference implementations.
