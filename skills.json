@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-03-29",
+  "skills": [
+    {
+      "name": "mern-stack-project",
+      "description": "Use this skill whenever the user asks to scaffold, design, build, or review any part of a MERN stack application intended for production. Triggers include: \"create a MERN project\", \"set up folder structure\", \"design the API\", \"build a REST endpoint\", \"add auth\", \"set up Express routes\", \"create a Mongoose model\", \"add middleware\", \"set up error handling\", \"write a controller\", \"add validation\", or any request to generate backend or frontend code within a MERN context. Also trigger when the user shares existing MERN code and asks for a review, refactor, or production-readiness check. Always use this skill even if the user only asks about one part (e.g. just a model or just a route) — the standards here apply to every layer.",
+      "category": "Development"
+    },
+    {
+      "name": "frontend-reactjs",
+      "description": "Use this skill whenever the user asks to scaffold, design, build, or review the React frontend of a MERN stack application. Triggers include: \"set up the frontend\", \"create the frontend folder structure\", \"create a React component\", \"set up Redux Toolkit\", \"add a Redux slice\", \"create an API helper\", \"set up React Router\", \"create a custom hook\", \"set up Axios\", \"build a page component\", \"add global state\", or any request to generate React / frontend code. Also trigger when the user shares existing frontend code and asks for a review, refactor, or production-readiness check. Always use this skill even if the user only asks about one part (e.g. just a slice or just a hook) — the standards here apply to every layer of the frontend.",
+      "category": "Development"
+    },
+    {
+      "name": "backend-expressjs",
+      "description": "Production-grade system for the Express / Node.js backend. Use this skill whenever the user asks to scaffold, design, build, extend, or review any part of a backend application. Triggers include: \"add a new API\", \"create a route with middleware\", \"setup constants\", \"design a Mongoose model\", \"build a REST endpoint\", \"add authentication\", or any request to generate Express/Node.js code. Use this skill even for isolated tasks (like adding one route or one constant) to ensure consistency with the established production standards.",
+      "category": "Development"
+    },
+    {
+      "name": "debug-reactjs-error",
+      "description": "Specialist skill for debugging React.js applications. Use this skill when the user encounters errors, bugs, or unexpected behavior in their React frontend. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically and temporary debugging code is removed.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-expressjs-error",
+      "description": "Specialist skill for debugging Express.js backend applications. Use this skill when the user encounters server-side errors, API failures, middleware issues, or database connectivity problems. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically and temporary debugging code is removed.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-mern-stack-error",
+      "description": "Specialist skill for debugging full-stack MERN (MongoDB, Express, React, Node) applications. Use this skill when the user encounters integration issues, authentication flows failing across layers, or general full-stack bugs. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically across frontend and backend.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-sailsjs-error",
+      "description": "Specialist skill for debugging Sails.js backend applications. Use this skill when the user encounters Sails.js-specific errors such as Waterline ORM issues (E_UNIQUE, E_INVALID_CRITERIA), action/helper failures (missing exits, E_MISSING_OR_INVALID_PARAMS), policy blocks (E_UNAUTHENTICATED, E_FORBIDDEN), or route misconfigurations. This skill implements a \"Trace, Solve, Clean\" workflow: identify the root cause, add targeted console.log statements, apply the fix, then remove all debug logs.",
+      "category": "Debugging"
+    },
+    {
+      "name": "sailsjs-api",
+      "description": "Use this skill whenever the user wants to create a new API endpoint in Sails.js. Triggers include: any mention of \"create API\", \"new endpoint\", \"add route\", \"controller action\", \"sails API\", or requests to add new functionality to a Sails.js backend. This skill covers the FULL flow: controller action, sails helper, model validation, route registration, and policy setup.",
+      "category": "Development"
+    },
+    {
+      "name": "sailsjs-helper",
+      "description": "Use this skill whenever the user wants to create a Sails.js helper only — without building a full API endpoint. Triggers include: \"create a helper\", \"add a helper\", \"write a sails helper\", \"new helper function\", or when a user asks to extract logic into a reusable helper. Also trigger when the user mentions a sails helper name and wants to implement it.",
+      "category": "Development"
+    },
+    {
+      "name": "skill-creator",
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "category": "Development"
+    },
+    {
+      "name": "prompt-writing",
+      "description": "Create, optimize, and refine high-quality AI prompts for various tasks. Use when the user wants to build a prompt for a chatbot, research agent, code assistant, or specialized task, or when they need to improve an existing prompt for better performance, accuracy, or format adherence.",
+      "category": "Productivity"
+    }
+  ]
+}

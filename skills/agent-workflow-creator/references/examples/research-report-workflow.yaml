@@ -1,0 +1,186 @@
+workflow:
+  name: research-report-generator
+  version: "1.0.0"
+  description: >
+    Given a research topic and depth level, searches the web for relevant sources,
+    extracts and validates key information, generates a structured report with citations,
+    and saves it as a markdown file. Supports quick, standard, and deep research modes.
+  tags:
+    - research
+    - content-generation
+    - web-search
+
+  metadata:
+    type: single-agent
+    domain: research
+    estimated_duration: "3–8 minutes"
+    complexity: medium
+
+  inputs:
+    - name: topic
+      type: string
+      description: The research topic or question to investigate
+      required: true
+    - name: depth
+      type: string
+      description: Research depth level
+      required: false
+      default: "standard"
+      validation:
+        allowed_values: ["quick", "standard", "deep"]
+    - name: output_format
+      type: string
+      description: Output format for the final report
+      required: false
+      default: "markdown"
+      validation:
+        allowed_values: ["markdown", "json"]
+
+  outputs:
+    - name: report
+      type: file
+      description: The final research report with citations
+      from: step_06.report_file
+
+  steps:
+    - id: step_01_plan_queries
+      name: Plan Search Queries
+      description: Derive 3–5 targeted search queries from the topic
+      tool: llm_structured
+      input:
+        from: inputs
+        field: topic
+      output:
+        name: search_queries
+        type: list
+      prompt: |
+        Research topic: "{{inputs.topic}}"
+        Depth: {{inputs.depth}}
+        Generate targeted web search queries.
+        Return JSON: { "queries": ["query1", "query2", ...], "approach": "..." }
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      on_success:
+        next: step_02_search
+
+    - id: step_02_search
+      name: Execute Web Searches
+      description: Run all planned search queries in parallel
+      tool: web_search
+      parallel: true
+      input:
+        from: step_01_plan_queries.search_queries
+        field: queries
+      output:
+        name: raw_search_results
+        type: list
+      on_failure:
+        strategy: fallback
+        fallback_step: step_02b_cached
+      on_success:
+        next: step_03_fetch
+
+    - id: step_02b_cached
+      name: Cached Search Fallback
+      description: Use cached/alternative search if primary fails
+      tool: web_search
+      input:
+        from: inputs
+        field: topic
+      output:
+        name: raw_search_results
+        type: list
+      on_success:
+        next: step_03_fetch
+
+    - id: step_03_fetch
+      name: Fetch Full Content
+      description: Retrieve full page content for top results
+      tool: web_fetch
+      parallel: true
+      input:
+        from: step_02_search.raw_search_results
+        field: top_urls
+      output:
+        name: full_content
+        type: list
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+        retry_on:
+          - TimeoutError
+          - ConnectionError
+      on_success:
+        next: step_04_extract
+
+    - id: step_04_extract
+      name: Extract Key Facts
+      description: Extract structured facts and claims from source content
+      tool: llm_structured
+      input:
+        from: step_03_fetch.full_content
+      output:
+        name: extracted_facts
+        type: json
+      prompt: |
+        Extract key facts from these sources about: "{{inputs.topic}}"
+        For each fact: claim, source_url, confidence (high/medium/low), date_mentioned.
+        Return JSON array of fact objects.
+      on_failure:
+        strategy: human_escalation
+        prompt_human: "Fact extraction failed. Please review the source content manually."
+      on_success:
+        next: step_05_generate
+
+    - id: step_05_generate
+      name: Generate Report
+      description: Synthesize facts into a structured report
+      tool: llm_completion
+      input:
+        from: step_04_extract.extracted_facts
+      output:
+        name: report_content
+        type: string
+      prompt: |
+        Write a comprehensive research report on: "{{inputs.topic}}"
+        Using ONLY these verified facts: {{step_04_extract.extracted_facts}}
+        Format: {{inputs.output_format}}
+
+        Structure:
+        # Executive Summary (2–3 sentences)
+        ## Key Findings (bullet points with citations)
+        ## Detailed Analysis
+        ## Sources
+        ## Conclusion
+
+        Do not add facts not present in the source material.
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      on_success:
+        next: step_06
+
+    - id: step_06
+      name: Save Report
+      description: Write the final report to a file
+      tool: file_write
+      input:
+        from: step_05_generate.report_content
+      output:
+        name: report_file
+        type: file
+      on_failure:
+        strategy: retry
+        max_attempts: 3
+
+  error_handling:
+    global_timeout_seconds: 600
+    global_on_failure: human_escalation
+    notification:
+      channel: none
+
+  observability:
+    logging: true
+    log_level: info
+    trace_steps: true

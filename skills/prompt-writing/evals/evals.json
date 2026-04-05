@@ -1,0 +1,26 @@
+{
+  "skill_name": "prompt-writing",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-customer-support-prompt",
+      "prompt": "Write a prompt for a customer support bot that handles refund requests for an e-commerce platform called 'EcoShop'. The bot should be empathetic but firm on the 30-day refund policy. It should ask for the order ID and reason for return.",
+      "expected_output": "A structured prompt with Role, Context, Task, Constraints, and Output Format. Should mention 'EcoShop', '30-day policy', empathy, and order ID/reason collection.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "optimize-summarization-prompt",
+      "prompt": "Optimize this prompt: 'summarize this text briefly'. Make it more robust for long technical documents and ensure it uses a bulleted list format.",
+      "expected_output": "An improved prompt using roles, context, and specific formatting instructions. Should include delimiters and instructions for handling technical terminology.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "few-shot-classification-prompt",
+      "prompt": "Create a few-shot prompt for classifying news articles into three categories: 'Politics', 'Tech', and 'Sports'. Use 2 examples for each category.",
+      "expected_output": "A prompt containing explicit few-shot examples (Politics x2, Tech x2, Sports x2) correctly formatted with input/output markers.",
+      "files": []
+    }
+  ]
+}

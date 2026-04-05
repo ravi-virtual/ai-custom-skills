@@ -1,0 +1,188 @@
+workflow:
+  name: customer-support-triage
+  version: "1.0.0"
+  description: >
+    Classifies incoming support tickets, looks up customer history, generates a
+    draft resolution, and routes to the appropriate team or auto-resolves if
+    confidence is high enough. Includes human escalation for sensitive issues.
+  tags:
+    - support
+    - triage
+    - human-in-loop
+
+  metadata:
+    type: human-in-loop
+    domain: customer-support
+    estimated_duration: "30–120 seconds"
+    complexity: medium
+
+  inputs:
+    - name: ticket_text
+      type: string
+      description: The customer's support message
+      required: true
+    - name: customer_id
+      type: string
+      description: Customer identifier
+      required: true
+    - name: channel
+      type: string
+      description: Source channel (email, chat, phone)
+      required: false
+      default: "email"
+
+  outputs:
+    - name: resolution
+      type: json
+      description: Triage result including classification, draft response, and routing
+      from: step_route.routing_decision
+
+  steps:
+    - id: step_01_classify
+      name: Classify Ticket
+      description: Determine issue type, urgency, and sentiment
+      tool: llm_structured
+      input:
+        from: inputs
+        field: ticket_text
+      output:
+        name: classification
+        type: json
+      prompt: |
+        Classify this support ticket: "{{inputs.ticket_text}}"
+        Return JSON: {
+          "category": "billing|technical|account|general",
+          "urgency": "critical|high|medium|low",
+          "sentiment": "angry|frustrated|neutral|positive",
+          "summary": "one-sentence summary"
+        }
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      on_success:
+        next: step_02_lookup
+
+    - id: step_02_lookup
+      name: Lookup Customer History
+      description: Retrieve customer account and ticket history
+      tool: database_read
+      input:
+        from: inputs
+        field: customer_id
+      output:
+        name: customer_history
+        type: json
+      on_failure:
+        strategy: fallback
+        fallback_step: step_02b_no_history
+      on_success:
+        next: step_03_draft
+
+    - id: step_02b_no_history
+      name: Proceed Without History
+      description: Continue with default context when history unavailable
+      tool: llm_completion
+      output:
+        name: customer_history
+        type: json
+      prompt: "Return default empty customer history: { 'tickets': [], 'account_status': 'unknown' }"
+      on_success:
+        next: step_03_draft
+
+    - id: step_03_draft
+      name: Draft Response
+      description: Generate a draft resolution response
+      tool: llm_completion
+      input:
+        from: [step_01_classify.classification, step_02_lookup.customer_history]
+      output:
+        name: draft_response
+        type: string
+      prompt: |
+        Customer ticket: "{{inputs.ticket_text}}"
+        Classification: {{step_01_classify.classification}}
+        Customer history: {{step_02_lookup.customer_history}}
+        Write a helpful, empathetic response. Be specific and actionable.
+      on_success:
+        next: step_04_confidence_check
+
+    - id: step_04_confidence_check
+      name: Confidence Check
+      description: Determine if auto-resolution is appropriate or human needed
+      tool: llm_structured
+      input:
+        from: [step_01_classify.classification, step_03_draft.draft_response]
+      output:
+        name: confidence
+        type: json
+      prompt: |
+        Should this ticket be auto-resolved?
+        Classification: {{step_01_classify.classification}}
+        Draft response: {{step_03_draft.draft_response}}
+        Return JSON: { "auto_resolve": bool, "confidence_score": 0-100, "reason": "..." }
+        Auto-resolve only if: confidence >= 85, urgency is medium/low, not billing-related.
+      branches:
+        - condition: "confidence.auto_resolve == true"
+          next: step_route
+        - condition: "confidence.auto_resolve == false"
+          next: step_05_human_review
+
+    - id: step_05_human_review
+      name: Human Review
+      description: Pause for agent review of draft response
+      tool: human_input
+      input:
+        from: step_03_draft.draft_response
+      output:
+        name: reviewed_response
+        type: json
+      prompt: |
+        Please review this draft response for ticket: {{step_01_classify.classification.summary}}
+        Classification: {{step_01_classify.classification}}
+        Draft: {{step_03_draft.draft_response}}
+        Options: approve | modify | escalate
+      timeout_seconds: 3600
+      on_failure:
+        strategy: human_escalation
+        alert: slack_support_team
+      on_success:
+        next: step_route
+
+    - id: step_route
+      name: Route and Finalize
+      description: Write routing decision and send or queue the response
+      tool: llm_structured
+      input:
+        from: [step_01_classify.classification, step_03_draft.draft_response]
+      output:
+        name: routing_decision
+        type: json
+      prompt: |
+        Finalize routing for this ticket.
+        Return JSON: {
+          "team": "tier1|tier2|billing|engineering|auto-resolved",
+          "priority": "critical|high|medium|low",
+          "response": "final response text",
+          "action": "send|queue|escalate",
+          "ticket_id": "generated-id"
+        }
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+
+  error_handling:
+    global_timeout_seconds: 300
+    global_on_failure: human_escalation
+    notification:
+      channel: slack
+      endpoint: "#support-alerts"
+
+  observability:
+    logging: true
+    log_level: info
+    trace_steps: true
+    metrics:
+      - name: auto_resolution_rate
+        description: Percentage of tickets auto-resolved without human review
+      - name: average_triage_time
+        description: Average time from ticket receipt to routing decision

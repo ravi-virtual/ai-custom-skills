@@ -1,0 +1,243 @@
+workflow:
+  name: data-etl-pipeline
+  version: "1.0"
+  description: >
+    Extracts data from a source database or file, transforms it according to
+    business rules (cleaning, enrichment, validation), and loads it into a
+    target data warehouse or downstream system. Includes data quality checks,
+    error quarantine for bad records, and a completion report.
+  pattern: sequential-chain
+  agent_type: single-agent
+
+  inputs:
+    - name: source_connection
+      type: string
+      description: "Connection string or file path for the data source"
+      required: true
+    - name: target_connection
+      type: string
+      description: "Connection string or destination path for the transformed data"
+      required: true
+    - name: transformation_rules
+      type: file
+      description: "YAML or JSON file describing field mappings and transformation logic"
+      required: true
+    - name: batch_size
+      type: integer
+      description: "Number of records to process per batch"
+      default: 1000
+      required: false
+
+  outputs:
+    - name: load_report
+      type: file
+      format: json
+      description: "Summary report: records processed, loaded, quarantined, errors"
+    - name: quarantine_file
+      type: file
+      format: csv
+      description: "Records that failed validation, with error reasons attached"
+
+  steps:
+    - id: step_01
+      name: Validate Source Connection
+      description: "Test connectivity to the source and confirm the expected schema exists"
+      tool: api_call
+      input:
+        connection: "{{inputs.source_connection}}"
+        action: "ping_and_schema_check"
+      output: source_schema
+      on_failure:
+        strategy: abort
+        message: "Cannot connect to source. Verify connection string and credentials."
+      next: step_02
+
+    - id: step_02
+      name: Validate Target Connection
+      description: "Test connectivity to the target and confirm write permissions"
+      tool: api_call
+      input:
+        connection: "{{inputs.target_connection}}"
+        action: "ping_and_write_check"
+      output: target_confirmed
+      on_failure:
+        strategy: abort
+        message: "Cannot connect to target. Verify connection string and write permissions."
+      next: step_03
+
+    - id: step_03
+      name: Load Transformation Rules
+      description: "Parse the transformation rules file and validate against schema"
+      tool: file_io
+      input:
+        path: "{{inputs.transformation_rules}}"
+        action: read_and_parse
+      output: parsed_rules
+      on_failure:
+        strategy: abort
+        message: "Transformation rules file is invalid or malformed."
+      next: step_04
+
+    - id: step_04
+      name: Extract Data in Batches
+      description: >
+        Stream data from the source in batches of batch_size records.
+        Each batch is passed to the transform step. This step loops until
+        all records are extracted.
+      tool: database
+      input:
+        connection: "{{inputs.source_connection}}"
+        batch_size: "{{inputs.batch_size}}"
+        action: stream_batches
+      output: raw_batch
+      loop:
+        condition: "more_records_available"
+        next_step: step_05
+      on_failure:
+        strategy: retry
+        max_attempts: 3
+        backoff_seconds: 10
+      next: step_05
+
+    - id: step_05
+      name: Transform Batch
+      description: >
+        Apply field mappings, data type casting, null handling, and
+        business logic transformations to the current batch using parsed_rules.
+      tool: code_execution
+      input:
+        batch: "{{step_04.raw_batch}}"
+        rules: "{{step_03.parsed_rules}}"
+        script: "scripts/transform_batch.py"
+      output:
+        transformed_records: list
+        quarantined_records: list
+      on_failure:
+        strategy: quarantine_batch
+        message: "Transform failed for batch. Entire batch moved to quarantine."
+      next: step_06
+
+    - id: step_06
+      name: Validate Transformed Data
+      description: >
+        Run data quality checks on transformed records: type correctness,
+        required fields present, referential integrity, value range checks.
+      tool: code_execution
+      input:
+        records: "{{step_05.transformed_records}}"
+        rules: "{{step_03.parsed_rules}}"
+        script: "scripts/validate_records.py"
+      output:
+        valid_records: list
+        invalid_records: list
+      on_failure:
+        strategy: continue
+        note: "Validation script error; treat all records as valid and flag for manual audit."
+      next: step_07
+
+    - id: step_07
+      name: Append to Quarantine File
+      description: "Write invalid and quarantined records to quarantine CSV with error reasons"
+      tool: file_io
+      input:
+        records: "{{step_05.quarantined_records}} + {{step_06.invalid_records}}"
+        path: "{{outputs.quarantine_file}}"
+        action: append_csv
+      output: quarantine_count
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      next: step_08
+
+    - id: step_08
+      name: Load Valid Records to Target
+      description: "Bulk-load validated, transformed records into the target system"
+      tool: database
+      input:
+        connection: "{{inputs.target_connection}}"
+        records: "{{step_06.valid_records}}"
+        action: bulk_insert
+      output: loaded_count
+      on_failure:
+        strategy: retry
+        max_attempts: 3
+        backoff_seconds: 15
+        fallback: step_08_fallback
+      next: step_09
+
+    - id: step_08_fallback
+      name: Row-by-Row Fallback Load
+      description: "If bulk insert fails, fall back to row-by-row inserts to isolate bad records"
+      tool: database
+      input:
+        connection: "{{inputs.target_connection}}"
+        records: "{{step_06.valid_records}}"
+        action: insert_one_by_one
+      output: loaded_count
+      on_failure:
+        strategy: quarantine_record
+      next: step_09
+
+    - id: step_09
+      name: Loop Check
+      description: "Check if more batches remain; if yes, return to step_04"
+      tool: code_execution
+      input:
+        source_state: "{{step_04.source_cursor}}"
+        script: "scripts/check_more_batches.py"
+      output: more_records_available
+      on_failure:
+        strategy: abort
+      next:
+        if: "{{more_records_available}} == true"
+        then: step_04
+        else: step_10
+
+    - id: step_10
+      name: Generate Load Report
+      description: >
+        Compile run statistics: total records extracted, transformed, validated,
+        loaded, quarantined, and time elapsed. Write to load_report JSON.
+      tool: code_execution
+      input:
+        stats:
+          extracted: "{{step_04.total_extracted}}"
+          transformed: "{{step_05.total_transformed}}"
+          quarantined: "{{step_07.quarantine_count}}"
+          loaded: "{{step_08.loaded_count}}"
+        script: "scripts/generate_report.py"
+        output_path: "{{outputs.load_report}}"
+      output: report_path
+      on_failure:
+        strategy: continue
+        note: "Report generation failed; pipeline still completed."
+      next: step_11
+
+    - id: step_11
+      name: Send Completion Notification
+      description: "Notify stakeholders with a summary of the run (success, counts, quarantine rate)"
+      tool: notification
+      input:
+        channel: "ops-alerts"
+        message_template: "ETL complete: {{step_10.stats.loaded}} records loaded, {{step_10.stats.quarantined}} quarantined."
+        report_path: "{{step_10.report_path}}"
+      output: notification_sent
+      on_failure:
+        strategy: continue
+        note: "Notification failed; pipeline result is still valid."
+      next: END
+
+  error_handling:
+    global:
+      - failure_type: "source_unavailable"
+        strategy: abort
+        notify: true
+      - failure_type: "target_unavailable"
+        strategy: abort
+        notify: true
+      - failure_type: "transform_error"
+        strategy: quarantine_record
+        notify: false
+      - failure_type: "validation_error"
+        strategy: quarantine_record
+        notify: false

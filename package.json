@@ -1,0 +1,26 @@
+{
+  "name": "@your-username/my-skills-collection",
+  "version": "1.0.0",
+  "description": "A collection of AI skills for enhanced agentic capabilities.",
+  "main": "index.js",
+  "bin": {
+    "custom-skills": "./index.js"
+  },
+  "keywords": [
+    "ai",
+    "skills",
+    "prompt-collection",
+    "agentic-coding"
+  ],
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "skills.json",
+    "skills/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

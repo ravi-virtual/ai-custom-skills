@@ -1,0 +1,303 @@
+workflow:
+  name: content-creation-workflow
+  version: "1.0"
+  description: >
+    End-to-end content creation pipeline: takes a topic, audience, and goal as
+    input and produces a polished, SEO-optimized long-form article (or blog post).
+    Includes research, outline generation, drafting, self-critique, revision,
+    and final formatting. Supports a human review gate before publishing.
+  pattern: critic-refine
+  agent_type: multi-agent
+
+  agents:
+    - role: Orchestrator
+      description: "Coordinates the pipeline, tracks state, and routes between agents"
+      steps: [step_01, step_02, step_09, step_10, step_11]
+
+    - role: Researcher
+      description: "Gathers source material, facts, and competitive content analysis"
+      steps: [step_03, step_04]
+
+    - role: Writer
+      description: "Produces the outline and drafts the article"
+      steps: [step_05, step_06]
+
+    - role: Critic
+      description: "Reviews the draft for quality, accuracy, coherence, and SEO"
+      steps: [step_07]
+
+    - role: Editor
+      description: "Applies revisions and finalizes the polished output"
+      steps: [step_08]
+
+  inputs:
+    - name: topic
+      type: string
+      description: "The subject of the article (e.g., 'How to implement RAG in production')"
+      required: true
+    - name: target_audience
+      type: string
+      description: "Who the article is for (e.g., 'senior ML engineers', 'small business owners')"
+      required: true
+    - name: content_goal
+      type: string
+      description: "What the content should achieve (e.g., 'educate', 'convert', 'build authority')"
+      required: true
+    - name: word_count_target
+      type: integer
+      description: "Target word count for the final article"
+      default: 1500
+      required: false
+    - name: tone
+      type: string
+      description: "Tone of voice (e.g., 'professional', 'conversational', 'authoritative')"
+      default: "professional"
+      required: false
+    - name: publish_destination
+      type: string
+      description: "Where to publish (e.g., 'wordpress_api', 'notion', 'file_export')"
+      required: false
+
+  outputs:
+    - name: final_article
+      type: file
+      format: markdown
+      description: "The finished, polished article in Markdown format"
+    - name: seo_metadata
+      type: object
+      description: "Title tag, meta description, target keywords, slug"
+    - name: content_brief
+      type: file
+      format: json
+      description: "Structured brief used to generate this article (for audit/reuse)"
+
+  steps:
+    - id: step_01
+      name: Parse & Validate Inputs
+      agent: Orchestrator
+      description: "Confirm all required inputs are present; set defaults for optional fields"
+      tool: llm_completion
+      input:
+        topic: "{{inputs.topic}}"
+        audience: "{{inputs.target_audience}}"
+        goal: "{{inputs.content_goal}}"
+        prompt: "Validate inputs and confirm this is a reasonable content creation request."
+      output: validated_inputs
+      on_failure:
+        strategy: abort
+        message: "Inputs are missing or invalid. Please provide topic, audience, and goal."
+      next: step_02
+
+    - id: step_02
+      name: Generate Content Brief
+      agent: Orchestrator
+      description: >
+        Create a structured content brief: working title, key questions to answer,
+        primary keyword, secondary keywords, target word count, tone, and angle.
+      tool: llm_completion
+      input:
+        topic: "{{step_01.validated_inputs.topic}}"
+        audience: "{{step_01.validated_inputs.target_audience}}"
+        goal: "{{step_01.validated_inputs.content_goal}}"
+        tone: "{{inputs.tone}}"
+        word_count: "{{inputs.word_count_target}}"
+        prompt: "Generate a detailed content brief for this article."
+      output: content_brief
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      next: step_03
+
+    - id: step_03
+      name: Research Topic
+      agent: Researcher
+      description: >
+        Search for recent, credible information on the topic. Collect:
+        - Top-ranking articles (SERP analysis)
+        - Key statistics and data points
+        - Expert quotes or references
+        - Common questions (PAA, forums, Reddit)
+      tool: web_search
+      input:
+        queries:
+          - "{{content_brief.primary_keyword}} best practices"
+          - "{{content_brief.primary_keyword}} statistics {{current_year}}"
+          - "{{content_brief.primary_keyword}} common questions"
+        result_count: 10
+      output: research_raw
+      on_failure:
+        strategy: continue
+        note: "Search failed or returned no results; proceed with LLM knowledge only."
+      next: step_04
+
+    - id: step_04
+      name: Synthesize Research
+      agent: Researcher
+      description: >
+        Distill research_raw into a structured research summary:
+        key facts, stats with sources, content gaps competitors missed,
+        and a list of questions the article must answer.
+      tool: llm_completion
+      input:
+        raw_research: "{{step_03.research_raw}}"
+        brief: "{{step_02.content_brief}}"
+        prompt: "Synthesize this research into a structured summary for the writer."
+      output: research_summary
+      on_failure:
+        strategy: continue
+        note: "Synthesis failed; writer will proceed with brief only."
+      next: step_05
+
+    - id: step_05
+      name: Generate Outline
+      agent: Writer
+      description: >
+        Produce a detailed article outline: H1, H2s, H3s, with 2-3 bullet points
+        per section describing what will be covered. Include intro hook angle and CTA.
+      tool: llm_completion
+      input:
+        brief: "{{step_02.content_brief}}"
+        research: "{{step_04.research_summary}}"
+        prompt: "Write a detailed, SEO-optimized article outline."
+      output: article_outline
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      next: step_06
+
+    - id: step_06
+      name: Write Draft
+      agent: Writer
+      description: >
+        Write the full article following the outline. Each section should be
+        substantive, on-brand with the specified tone, and naturally incorporate
+        the target keywords without keyword stuffing.
+      tool: llm_completion
+      input:
+        outline: "{{step_05.article_outline}}"
+        research: "{{step_04.research_summary}}"
+        brief: "{{step_02.content_brief}}"
+        word_count_target: "{{inputs.word_count_target}}"
+        tone: "{{inputs.tone}}"
+        prompt: "Write the complete article based on this outline and research."
+      output: draft_article
+      on_failure:
+        strategy: retry
+        max_attempts: 2
+      next: step_07
+
+    - id: step_07
+      name: Critic Review
+      agent: Critic
+      description: >
+        Review the draft on these dimensions and produce a structured critique:
+        1. Accuracy — are all claims supported?
+        2. Coherence — does the article flow logically?
+        3. Completeness — does it answer all questions from the brief?
+        4. SEO — are keywords used naturally? Is the title compelling?
+        5. Audience fit — is the tone and depth right for the target audience?
+        6. Word count — is it within 10% of the target?
+        Output: critique with specific, actionable revision notes per section.
+      tool: llm_completion
+      input:
+        draft: "{{step_06.draft_article}}"
+        brief: "{{step_02.content_brief}}"
+        research: "{{step_04.research_summary}}"
+        prompt: "Critique this draft and provide specific revision instructions."
+      output: critique
+      on_failure:
+        strategy: skip
+        note: "Critic failed; proceed to editing without critique."
+      next: step_08
+
+    - id: step_08
+      name: Revise & Polish
+      agent: Editor
+      description: >
+        Apply the critic's notes to produce a final, polished article.
+        Also: fix grammar, improve transitions, strengthen the hook and CTA,
+        add formatting (bullet points, bold key terms) for readability.
+      tool: llm_completion
+      input:
+        draft: "{{step_06.draft_article}}"
+        critique: "{{step_07.critique}}"
+        brief: "{{step_02.content_brief}}"
+        prompt: "Revise the draft based on the critique and produce a polished final article."
+      output: revised_article
+      on_failure:
+        strategy: use_previous
+        fallback_value: "{{step_06.draft_article}}"
+        note: "Revision failed; use unrevised draft."
+      next: step_09
+
+    - id: step_09
+      name: Generate SEO Metadata
+      agent: Orchestrator
+      description: >
+        Produce: optimized title tag (≤60 chars), meta description (≤160 chars),
+        URL slug, primary keyword, 5 secondary keywords, and Open Graph description.
+      tool: llm_completion
+      input:
+        article: "{{step_08.revised_article}}"
+        brief: "{{step_02.content_brief}}"
+        prompt: "Generate complete SEO metadata for this article."
+      output: seo_metadata
+      on_failure:
+        strategy: continue
+        note: "SEO metadata generation failed; metadata will be empty."
+      next: step_10
+
+    - id: step_10
+      name: Human Review Gate
+      agent: Orchestrator
+      description: >
+        Present the final article and SEO metadata to a human reviewer.
+        Await approval, rejection, or inline edits before publishing.
+        If no publish_destination is set, this is the final step.
+      tool: human_input
+      input:
+        article: "{{step_08.revised_article}}"
+        metadata: "{{step_09.seo_metadata}}"
+        prompt: "Please review the article. Approve to publish, or provide revision notes."
+      output:
+        decision: "approved | rejected | revised"
+        reviewer_notes: string
+        final_content: string
+      on_failure:
+        strategy: wait_and_retry
+        wait_seconds: 300
+        max_attempts: 3
+      next:
+        if: "{{step_10.decision}} == 'approved'"
+        then: step_11
+        else: step_06  # Loop back to drafting with reviewer notes
+
+    - id: step_11
+      name: Publish or Export
+      agent: Orchestrator
+      description: "Publish the approved article to the configured destination, or export as file"
+      tool: api_call
+      input:
+        destination: "{{inputs.publish_destination}}"
+        content: "{{step_10.final_content}}"
+        metadata: "{{step_09.seo_metadata}}"
+        action: "publish_or_export"
+      output: publish_result
+      on_failure:
+        strategy: export_to_file
+        fallback_path: "outputs/final_article.md"
+        note: "Publish failed; article saved locally as fallback."
+      next: END
+
+  error_handling:
+    global:
+      - failure_type: "llm_timeout"
+        strategy: retry
+        max_attempts: 3
+        backoff_seconds: 10
+      - failure_type: "llm_content_policy"
+        strategy: abort
+        message: "Content policy violation. Review topic and try again."
+      - failure_type: "publish_api_error"
+        strategy: export_to_file
+        notify: true

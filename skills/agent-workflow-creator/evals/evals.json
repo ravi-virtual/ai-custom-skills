@@ -1,0 +1,35 @@
+{
+  "skill_name": "agent-workflow-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to build an agent that monitors our company's Twitter/X mentions, classifies them as positive/negative/neutral, responds to negative ones automatically, and sends a daily summary report to our Slack. Can you design the complete workflow for this?",
+      "expected_output": "A complete workflow with: step table, Mermaid diagram, YAML definition, tool manifest, agent roles, error handling plan, and pre-flight checklist. Should identify fan-out pattern (search + classify + respond in parallel), human-in-loop for negative responses, scheduled triggering, and Slack notification step.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Create a multi-agent workflow for generating a competitive analysis report. We want one agent to research our competitor's products, one to analyze pricing, and one to write the final report.",
+      "expected_output": "A supervisor-worker multi-agent workflow with 3+ specialized agents. Should include parallel research and analysis branches, a synthesizing orchestrator, the Mermaid diagram showing agent color-coding, and a YAML with agents section.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want an agent that can process uploaded CSV files: validate the schema, clean the data (remove duplicates, fix nulls), run some analysis, and output a cleaned CSV plus a summary report.",
+      "expected_output": "A data pipeline workflow with: file_read input, schema validation step with branching (pass/fail), data cleaning step, analysis step, parallel outputs (clean CSV + report). Should include data quality assertions and the YAML.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Design a ReAct-style autonomous agent workflow that can answer complex multi-step research questions by searching the web iteratively until it has enough information.",
+      "expected_output": "A ReAct loop workflow with: initialize → reason → act → observe cycle, max_iterations safety cap, memory usage for action history, a Mermaid diagram showing the loop clearly, and termination conditions.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "How should I structure a workflow for a content creation pipeline that writes blog posts: takes a topic, researches it, generates an outline, writes a draft, fact-checks it, and formats it for WordPress?",
+      "expected_output": "A sequential chain with critic-refine elements. Steps: research → outline → draft → fact-check (branching: pass/revise) → format → output. Should include quality assertions, the step table, Mermaid diagram, and YAML.",
+      "files": []
+    }
+  ]
+}

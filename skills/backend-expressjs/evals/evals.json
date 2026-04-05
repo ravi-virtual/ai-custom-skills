@@ -1,0 +1,17 @@
+{
+  "skill_name": "backend-expressjs",
+  "evals": [
+    {
+      "id": 0,
+      "name": "add-product-api",
+      "prompt": "Add a new 'Product' API to our existing project. It should have fields for name, price, and category. Only Admins should be able to create products, but anyone can view them. Make sure to add any necessary constants for error codes.",
+      "expected_output": "The skill should follow the 6-step workflow: 1. Add ErrorCodes to constants.js, 2. Create Product model with UUID, 3. Ensure isAdmin middleware is used, 4. Create productValidator, 5. Create ProductController with JSDoc, 6. Register productRoutes in index.js."
+    },
+    {
+      "id": 1,
+      "name": "add-order-status-constant",
+      "prompt": "I need to add a new set of static variables for Order statuses: PENDING, SHIPPED, DELIVERED, and CANCELLED. Put them in the constants file.",
+      "expected_output": "The skill should update src/config/constants.js by adding an OrderStatuses object with the specified keys."
+    }
+  ]
+}
