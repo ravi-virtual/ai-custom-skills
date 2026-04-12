@@ -1,3 +1,16 @@
+---
+name: mern-stack-project
+description: >
+  Use this skill whenever the user asks to scaffold, design, build, or review any part of a MERN
+  stack application intended for production. Triggers include: "create a MERN project", "set up
+  folder structure", "design the API", "build a REST endpoint", "add auth", "set up Express routes",
+  "create a Mongoose model", "add middleware", "set up error handling", "write a controller",
+  "add validation", or any request to generate backend or frontend code within a MERN context.
+  Also trigger when the user shares existing MERN code and asks for a review, refactor, or
+  production-readiness check. Always use this skill even if the user only asks about one part
+  (e.g. just a model or just a route) — the standards here apply to every layer.
+---
+
 # MERN Production Skill
 
 A complete rulebook for scaffolding and building production-grade MERN stack applications.

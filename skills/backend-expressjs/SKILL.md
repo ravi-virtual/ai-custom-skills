@@ -1,6 +1,12 @@
 ---
 name: backend-expressjs
-description: Production-grade system for the Express / Node.js backend. Use this skill whenever the user asks to scaffold, design, build, extend, or review any part of a backend application. Triggers include: "add a new API", "create a route with middleware", "setup constants", "design a Mongoose model", "build a REST endpoint", "add authentication", or any request to generate Express/Node.js code. Use this skill even for isolated tasks (like adding one route or one constant) to ensure consistency with the established production standards.
+description: >
+  Production-grade system for the Express / Node.js backend. Use this skill whenever the user asks
+  to scaffold, design, build, extend, or review any part of a backend application. Triggers include:
+  "add a new API", "create a route with middleware", "setup constants", "design a Mongoose model",
+  "build a REST endpoint", "add authentication", or any request to generate Express/Node.js code.
+  Use this skill even for isolated tasks (like adding one route or one constant) to ensure
+  consistency with the established production standards.
 ---
 
 # MERN Backend Skill

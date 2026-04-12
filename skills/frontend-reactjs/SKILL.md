@@ -1,3 +1,16 @@
+---
+name: frontend-reactjs
+description: >
+  Use this skill whenever the user asks to scaffold, design, build, or review the React frontend of
+  a MERN stack application. Triggers include: "set up the frontend", "create the frontend folder
+  structure", "create a React component", "set up Redux Toolkit", "add a Redux slice", "create an
+  API helper", "set up React Router", "create a custom hook", "set up Axios", "build a page
+  component", "add global state", or any request to generate React / frontend code. Also trigger
+  when the user shares existing frontend code and asks for a review, refactor, or
+  production-readiness check. Always use this skill even if the user only asks about one part
+  (e.g. just a slice or just a hook) — the standards here apply to every layer of the frontend.
+---
+
 # MERN Frontend Skill
 
 Production-grade rulebook for the React frontend.
