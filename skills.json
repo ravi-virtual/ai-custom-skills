@@ -56,6 +56,11 @@
       "name": "prompt-writing",
       "description": "Create, optimize, and refine high-quality AI prompts for various tasks. Use when the user wants to build a prompt for a chatbot, research agent, code assistant, or specialized task, or when they need to improve an existing prompt for better performance, accuracy, or format adherence.",
       "category": "Productivity"
+    },
+    {
+      "name": "agent-workflow-creator",
+      "description": "Design, generate, document, and validate complete agent workflows for any task or domain. Use when the user wants to build an agent, design a workflow, automate a process, create a pipeline, map out task steps for AI execution, or define agent roles and tool sequences for a multi-step AI process.",
+      "category": "Productivity"
     }
   ]
 }
