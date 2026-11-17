@@ -1,0 +1,23 @@
+{
+  "skill_name": "ai-workflow-builder",
+  "evals": [
+    {
+      "id": 0,
+      "name": "scaffold-from-yaml",
+      "prompt": "I already have workflow.yaml from the agent-workflow-creator skill for a support ticket triage pipeline. Turn it into a runnable Python project and tell me what I still need to implement.",
+      "expected_output": "Runs scripts/scaffold_python_workflow.py, lists the generated stubs in tools.py that must be implemented, runs runner.py --check and the tests, and gives the run commands incl. ANTHROPIC_API_KEY or RUNNER_FAKE_LLM dry run."
+    },
+    {
+      "id": 1,
+      "name": "right-size-the-solution",
+      "prompt": "I want an AI agent that renames and tags my uploaded invoices. Build it.",
+      "expected_output": "Recognises this is a fixed pipeline, not an open-ended agent: proposes a simple extract-then-rename chain (or single LLM call) with validation, rather than a tool-using agent loop; mentions idempotency/dry-run for renames."
+    },
+    {
+      "id": 2,
+      "name": "no-code-handoff",
+      "prompt": "My client uses n8n. Map my lead-qualification workflow to n8n nodes and explain how failures reach a human.",
+      "expected_output": "Uses references/no-code-automation.md: trigger, HTTP/LLM node, IF/Switch, parsing/validation node, error workflow notifying a person; advises exporting JSON from the editor rather than hand-writing node JSON."
+    }
+  ]
+}

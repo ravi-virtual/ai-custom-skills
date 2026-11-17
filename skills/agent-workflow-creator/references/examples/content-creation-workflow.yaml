@@ -10,25 +10,30 @@ workflow:
   agent_type: multi-agent
 
   agents:
-    - role: Orchestrator
-      description: "Coordinates the pipeline, tracks state, and routes between agents"
-      steps: [step_01, step_02, step_09, step_10, step_11]
+    - id: orchestrator
+      name: Orchestrator
+      role: "Coordinates the pipeline, tracks state, and routes between agents"
+      # steps handled: step_01, step_02, step_09, step_10, step_11
 
-    - role: Researcher
-      description: "Gathers source material, facts, and competitive content analysis"
-      steps: [step_03, step_04]
+    - id: researcher
+      name: Researcher
+      role: "Gathers source material, facts, and competitive content analysis"
+      # steps handled: step_03, step_04
 
-    - role: Writer
-      description: "Produces the outline and drafts the article"
-      steps: [step_05, step_06]
+    - id: writer
+      name: Writer
+      role: "Produces the outline and drafts the article"
+      # steps handled: step_05, step_06
 
-    - role: Critic
-      description: "Reviews the draft for quality, accuracy, coherence, and SEO"
-      steps: [step_07]
+    - id: critic
+      name: Critic
+      role: "Reviews the draft for quality, accuracy, coherence, and SEO"
+      # steps handled: step_07
 
-    - role: Editor
-      description: "Applies revisions and finalizes the polished output"
-      steps: [step_08]
+    - id: editor
+      name: Editor
+      role: "Applies revisions and finalizes the polished output"
+      # steps handled: step_08
 
   inputs:
     - name: topic
@@ -74,7 +79,7 @@ workflow:
   steps:
     - id: step_01
       name: Parse & Validate Inputs
-      agent: Orchestrator
+      agent: orchestrator
       description: "Confirm all required inputs are present; set defaults for optional fields"
       tool: llm_completion
       input:
@@ -90,7 +95,7 @@ workflow:
 
     - id: step_02
       name: Generate Content Brief
-      agent: Orchestrator
+      agent: orchestrator
       description: >
         Create a structured content brief: working title, key questions to answer,
         primary keyword, secondary keywords, target word count, tone, and angle.
@@ -110,7 +115,7 @@ workflow:
 
     - id: step_03
       name: Research Topic
-      agent: Researcher
+      agent: researcher
       description: >
         Search for recent, credible information on the topic. Collect:
         - Top-ranking articles (SERP analysis)
@@ -132,7 +137,7 @@ workflow:
 
     - id: step_04
       name: Synthesize Research
-      agent: Researcher
+      agent: researcher
       description: >
         Distill research_raw into a structured research summary:
         key facts, stats with sources, content gaps competitors missed,
@@ -150,7 +155,7 @@ workflow:
 
     - id: step_05
       name: Generate Outline
-      agent: Writer
+      agent: writer
       description: >
         Produce a detailed article outline: H1, H2s, H3s, with 2-3 bullet points
         per section describing what will be covered. Include intro hook angle and CTA.
@@ -167,7 +172,7 @@ workflow:
 
     - id: step_06
       name: Write Draft
-      agent: Writer
+      agent: writer
       description: >
         Write the full article following the outline. Each section should be
         substantive, on-brand with the specified tone, and naturally incorporate
@@ -188,7 +193,7 @@ workflow:
 
     - id: step_07
       name: Critic Review
-      agent: Critic
+      agent: critic
       description: >
         Review the draft on these dimensions and produce a structured critique:
         1. Accuracy — are all claims supported?
@@ -212,7 +217,7 @@ workflow:
 
     - id: step_08
       name: Revise & Polish
-      agent: Editor
+      agent: editor
       description: >
         Apply the critic's notes to produce a final, polished article.
         Also: fix grammar, improve transitions, strengthen the hook and CTA,
@@ -232,7 +237,7 @@ workflow:
 
     - id: step_09
       name: Generate SEO Metadata
-      agent: Orchestrator
+      agent: orchestrator
       description: >
         Produce: optimized title tag (≤60 chars), meta description (≤160 chars),
         URL slug, primary keyword, 5 secondary keywords, and Open Graph description.
@@ -249,7 +254,7 @@ workflow:
 
     - id: step_10
       name: Human Review Gate
-      agent: Orchestrator
+      agent: orchestrator
       description: >
         Present the final article and SEO metadata to a human reviewer.
         Await approval, rejection, or inline edits before publishing.
@@ -274,7 +279,7 @@ workflow:
 
     - id: step_11
       name: Publish or Export
-      agent: Orchestrator
+      agent: orchestrator
       description: "Publish the approved article to the configured destination, or export as file"
       tool: api_call
       input:
@@ -301,3 +306,13 @@ workflow:
       - failure_type: "publish_api_error"
         strategy: export_to_file
         notify: true
+
+  observability:
+    logging: true
+    log_level: info
+    trace_steps: true
+    metrics:
+      - name: step_failure_rate
+        description: Share of steps that hit an on_failure path
+      - name: end_to_end_duration
+        description: Wall-clock time from first step to the terminal step

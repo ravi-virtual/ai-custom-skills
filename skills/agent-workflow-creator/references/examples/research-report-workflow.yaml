@@ -91,6 +91,9 @@ workflow:
       output:
         name: raw_search_results
         type: list
+      on_failure:
+        strategy: abort
+        message: "Primary and cached search both failed; cannot research without sources."
       on_success:
         next: step_03_fetch
 

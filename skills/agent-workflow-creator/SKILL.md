@@ -1,14 +1,6 @@
 ---
 name: agent-workflow-creator
-description: >
-  Use this skill to design, generate, document, and validate complete agent workflows for any task or domain.
-  Trigger this skill whenever a user asks to: build an agent, design a workflow, automate a process, create
-  a pipeline, map out task steps for AI execution, design an LLM-powered automation, define agent roles or
-  tool sequences, create a multi-step AI process, or plan any system where AI agents coordinate to complete
-  a goal. Also trigger for: "how should my agent handle X", "what steps does an AI need for Y", "create a
-  workflow for Z", "design an automation pipeline", "agent architecture for...", or any request to structure
-  tasks so an AI can execute them reliably and efficiently. Use even if the user mentions 'flow', 'pipeline',
-  'automation', 'task plan', 'agent design', or 'AI process' — this skill covers all of those.
+description: Designs and validates AI agent workflows and automation pipelines - decomposes a goal into steps, assigns tools and agent roles, defines branching, error handling and human checkpoints, and produces a step table, Mermaid diagram and a validated YAML spec. Use when the user wants to plan or document how an agent, LLM pipeline, multi-agent system or business process should run ("design a workflow for X", "what steps does an AI need for Y", "agent architecture for Z"). Use ai-workflow-builder afterwards to implement and run the spec; use prompt-writing for a single prompt.
 ---
 
 # Agent Workflow Creator
@@ -28,6 +20,20 @@ A great agent workflow is more than a list of steps. It is:
 - **Role-assigned** — in multi-agent systems, every step says WHO does it
 
 Think of yourself as both a systems architect and an AI director: you're building a machine that runs reliably without human intervention, but also a script that any capable agent can follow.
+
+---
+
+## Right-Size the Design
+
+Start from the simplest structure that can work, and add agency only when it earns its cost:
+
+1. A single LLM call (with retrieval if needed)
+2. A fixed workflow: prompt chain, router, parallel map, evaluator-optimizer
+3. An agent that chooses its own steps with tools, only when the path cannot be known in advance
+
+Say which level you chose and why. Prefer deterministic code for anything that has a right answer (parsing, math, lookups, validation) and reserve LLM steps for judgment, language and extraction. Put human approval in front of irreversible actions (sending, paying, deleting, publishing).
+
+**Scale the output to the request.** For a quick question give the step table, the Mermaid diagram and the YAML. Produce all eight artifacts below when the user asks for a complete, documented workflow or a production design.
 
 ---
 
@@ -247,6 +253,8 @@ Use these scripts to accelerate workflow generation:
 - `scripts/validate_workflow.py` — Validates a YAML workflow file against the schema
 - `scripts/render_mermaid.py` — Converts a YAML workflow to a Mermaid diagram string
 - `scripts/export_workflow.py` — Exports a workflow to multiple formats (JSON, YAML, Markdown)
+
+To turn a validated spec into running code, hand it to the `ai-workflow-builder` skill.
 
 Run any script with `--help` for full usage.
 

@@ -241,3 +241,13 @@ workflow:
       - failure_type: "validation_error"
         strategy: quarantine_record
         notify: false
+
+  observability:
+    logging: true
+    log_level: info
+    trace_steps: true
+    metrics:
+      - name: step_failure_rate
+        description: Share of steps that hit an on_failure path
+      - name: end_to_end_duration
+        description: Wall-clock time from first step to the terminal step
