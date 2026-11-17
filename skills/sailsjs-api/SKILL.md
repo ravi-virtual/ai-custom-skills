@@ -12,6 +12,8 @@ description: >
 
 # Sails.js API Creator
 
+> **Conventions this skill assumes:** constants in `sails.config.constants`, Redis-first reads via `sails.helpers.getCache`, errors reported to SQS via `sails.helpers.sendMessage`, and validatorjs-style `validateData` on the model. Check the project actually has each of these (Step 1). If one is missing, ask which equivalent to use instead of inventing a helper that does not exist.
+
 Creates a **complete, production-ready** Sails.js API endpoint covering all five layers:
 
 1. **Controller Action** — the request handler
@@ -120,21 +122,16 @@ integer|min:1
 
 ### Step 5 — Route
 
-Add to `config/routes.js`:
+Add to `config/routes.js`. Use the object form or the shorthand, whichever the file already uses:
 
 ```js
-'POST /api/v1/<resource>/<action>': {
-  controller: '<ControllerName>',
-  action: '<actionName>',
-  policy: ['<PolicyName>'],   // if policies are separate from policies.js mapping
-},
-```
+'POST /api/v1/<resource>/<action>': { controller: '<ControllerName>', action: '<actionName>' },
 
-Or the shorthand used in many Sails apps:
-
-```js
+// shorthand
 'POST /api/v1/<resource>/<action>': '<ControllerName>.<actionName>',
 ```
+
+Routes never declare policies. Protection is configured only in `config/policies.js` (next step). Keep the path style (`/api/v1/...`, kebab-case) identical to the neighbouring routes.
 
 ---
 

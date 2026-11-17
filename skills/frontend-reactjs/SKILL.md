@@ -1,14 +1,6 @@
 ---
 name: frontend-reactjs
-description: >
-  Use this skill whenever the user asks to scaffold, design, build, or review the React frontend of
-  a MERN stack application. Triggers include: "set up the frontend", "create the frontend folder
-  structure", "create a React component", "set up Redux Toolkit", "add a Redux slice", "create an
-  API helper", "set up React Router", "create a custom hook", "set up Axios", "build a page
-  component", "add global state", or any request to generate React / frontend code. Also trigger
-  when the user shares existing frontend code and asks for a review, refactor, or
-  production-readiness check. Always use this skill even if the user only asks about one part
-  (e.g. just a slice or just a hook) — the standards here apply to every layer of the frontend.
+description: Builds and reviews the React (Vite) frontend of a MERN application with Redux Toolkit, a single Axios instance and per-resource API modules, React Router, custom hooks and consistent component conventions. Use when the user asks to scaffold the frontend, create a component, page, hook, Redux slice or API helper, set up routing, Axios or global state, or review React code for production readiness. Apply it even to one small piece (a slice, a hook) so the code stays consistent. For project-level decisions or full-stack features use mern-stack-project; for React bugs use debug-reactjs-error.
 ---
 
 # MERN Frontend Skill
