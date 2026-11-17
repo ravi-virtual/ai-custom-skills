@@ -1,0 +1,28 @@
+{
+  "freelancer": { "name": "Alex Doe" },
+  "client": { "name": "Jane Smith", "company": "Acme Co" },
+  "project": {
+    "name": "Checkout coupon fix and tests",
+    "summary": "Find and fix the 500 error that occurs when a coupon is applied at checkout, and add regression tests so it cannot return.",
+    "start_date": "2026-12-01",
+    "target_date": "2026-12-12"
+  },
+  "deliverables": [
+    "Root-cause analysis (one page)",
+    "Fix merged to the staging branch, reviewed by the client",
+    "Automated tests covering coupon scenarios (percentage, fixed, expired, stacked)"
+  ],
+  "out_of_scope": ["New coupon types", "Redesign of the checkout page", "Hosting or infrastructure changes"],
+  "assumptions": ["Read and write access to the repository by 2026-12-01", "A staging environment that mirrors production", "One point of contact who gives consolidated feedback"],
+  "access_needed": ["Git repository", "Staging environment", "Error-log tool (read only)"],
+  "milestones": [
+    { "name": "Diagnosis and plan", "due": "2026-12-04", "amount": 300 },
+    { "name": "Fix and tests delivered", "due": "2026-12-12", "amount": 700 }
+  ],
+  "currency": "USD",
+  "payment_terms": { "deposit_percent": 30, "net_days": 7 },
+  "revisions_included": 2,
+  "review_days": 3,
+  "intake_due": "2026-11-28",
+  "communication": { "channel": "Slack", "update_day": "Friday", "response_time": "1 business day" }
+}
