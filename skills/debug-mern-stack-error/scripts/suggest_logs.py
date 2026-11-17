@@ -1,61 +1,72 @@
-import sys
+#!/usr/bin/env python3
+"""suggest_logs.py - propose where to add temporary debug logs in a MERN (React client or Express server) file.
+
+Usage:
+  python suggest_logs.py <file>
+
+Prints JSON: a list of {"line", "type", "insert", "snippet"} sorted by line. Every snippet ends with
+the cleanup marker `// [DEBUG]` so `cleanup_logs.py` can remove it afterwards.
+Never log secrets: log whether a token/password exists (`!!token`), not its value.
+"""
+import json
 import os
 import re
-import json
+import sys
 
-def suggest_mern_logs(filepath):
-    """
-    Analyzes MERN stack files for full-stack log suggestions.
-    """
-    if not os.path.exists(filepath):
-        return {"error": f"File {filepath} not found."}
-        
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
-        
-    suggestions = []
-    
-    # Frontend - Axios/Fetch (React)
-    axios_matches = re.findall(r"(?:axios|api)\.(get|post|put|delete|patch)\((.*?)\)", content)
-    for method, endpoint in axios_matches:
-        suggestions.append({
-            "method": method,
-            "endpoint": endpoint,
-            "type": "frontend_api_call",
-            "suggestion": f"Add `console.log('// [DEBUG] Axios {method} to {endpoint}');` before call."
-        })
-        
-    # Backend - Express routes
-    route_matches = re.findall(r"router\.(get|post|put|delete|patch)\((.*?),(.*?)\)", content)
-    for method, path, handler in route_matches:
-        suggestions.append({
-            "method": method,
-            "path": path,
-            "type": "backend_route",
-            "suggestion": f"Add `console.log('// [DEBUG] Incoming MERN {method} request on {path}');` at the top of the route or middleware."
-        })
-        
-    # Full-stack auth (JWT)
-    auth_matches = re.findall(r"(?:localStorage\.setItem|setHeader)\(.*?(?:token|jwt).*?\)", content)
-    for auth in auth_matches:
-        suggestions.append({
-            "type": "auth_handling",
-            "suggestion": f"Add `console.log('// [DEBUG] Auth token being set/sent');` to trace full-stack auth."
-        })
-        
-    if not suggestions:
-        suggestions.append({
+MARKER = "// [DEBUG]"
+
+# (type, regex matched per line, where to insert, snippet).
+# Snippet placeholders: {name} = first captured group, {L} = line number.
+RULES = [
+    ('react-http-call', r"\bawait\s+(?:axios|api|\w+Api)\.(?:get|post|put|patch|delete)\(", 'line before the call', "console.log('[DEBUG][client] request @L{L}')"),
+    ('react-http-response', r"\bconst\s+(?:\{[^}]*\}|\w+)\s*=\s*await\s+(?:axios|api|\w+Api)\b", 'line after the await', "console.log('[DEBUG][client] response @L{L}')"),
+    ('react-effect', r"\buseEffect\(", 'first line inside the effect', "console.log('[DEBUG][client] effect run @L{L}')"),
+    ('express-handler', r"(?:(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(?\s*req\s*,\s*res|function\s+(\w+)\s*\(\s*req\s*,\s*res)", 'first line inside the handler', "console.log('[DEBUG][server] {name}', { params: req.params, query: req.query, body: req.body })"),
+    ('express-route', r"\b(?:router|app)\.(?:get|post|put|patch|delete)\(\s*['\"`]([^'\"`]+)", 'inside the first handler of this route', "console.log('[DEBUG][server] hit {name}', req.method, req.originalUrl)"),
+    ('mongoose-call', r"\bawait\s+(\w+)\.(?:find|findOne|findById|findByIdAndUpdate|create|updateOne|deleteOne|save|aggregate)\b", 'line after the await', "console.log('[DEBUG][server] {name} query done @L{L}')"),
+    ('auth-token', r"(?:localStorage\.(?:set|get)Item\(['\"`]\w*token|Authorization|jwt\.verify|jwt\.sign)", 'next line (log presence only, never the token value)', "console.log('[DEBUG][auth] token present?', !!(typeof token !== 'undefined' && token))"),
+    ('cors', r"\bcors\(", 'above the app.use(cors(...)) line', "console.log('[DEBUG][server] CORS origin from env', process.env.CLIENT_URL)"),
+    ('catch', r"\bcatch\s*\((\w+)\)", 'first line inside the catch', "console.log('[DEBUG] caught', {name}?.response?.data ?? {name}?.message)"),
+]
+
+
+def suggest(path):
+    if not os.path.isfile(path):
+        return {"error": f"File not found: {path}"}
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        lines = fh.read().splitlines()
+
+    found = []
+    for idx, line in enumerate(lines, start=1):
+        if MARKER in line:
+            continue  # already instrumented
+        for kind, regex, insert, snippet in RULES:
+            m = re.search(regex, line)
+            if not m:
+                continue
+            name = next((g for g in m.groups() if g), kind)
+            found.append({
+                "line": idx,
+                "type": kind,
+                "insert": insert,
+                "snippet": snippet.replace("{name}", name).replace("{L}", str(idx)) + "; " + MARKER,
+            })
+
+    found.sort(key=lambda s: s["line"])
+    if not found:
+        return [{
+            "line": 1,
             "type": "general",
-            "suggestion": "Add `console.log('// [DEBUG] MERN stack tracing initiated');`."
-        })
-        
-    return suggestions
+            "insert": "top of file",
+            "snippet": "console.log('[DEBUG] reached', __filename); " + MARKER,
+        }]
+    return found
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "No file path provided. Usage: python suggest_logs.py <file_path>"}))
+    if len(sys.argv) != 2:
+        print(json.dumps({"error": "Usage: python suggest_logs.py <file>"}))
         sys.exit(1)
-        
-    file_path = sys.argv[1]
-    result = suggest_mern_logs(file_path)
+    result = suggest(sys.argv[1])
     print(json.dumps(result, indent=2))
+    sys.exit(1 if isinstance(result, dict) else 0)

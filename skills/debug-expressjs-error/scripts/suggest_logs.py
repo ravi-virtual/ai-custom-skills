@@ -1,61 +1,69 @@
-import sys
+#!/usr/bin/env python3
+"""suggest_logs.py - propose where to add temporary debug logs in a Express route/controller/middleware file.
+
+Usage:
+  python suggest_logs.py <file>
+
+Prints JSON: a list of {"line", "type", "insert", "snippet"} sorted by line. Every snippet ends with
+the cleanup marker `// [DEBUG]` so `cleanup_logs.py` can remove it afterwards.
+Never log secrets: log whether a token/password exists (`!!token`), not its value.
+"""
+import json
 import os
 import re
-import json
+import sys
 
-def suggest_express_logs(filepath):
-    """
-    Analyzes an Express.js controller or route file for log suggestions.
-    """
-    if not os.path.exists(filepath):
-        return {"error": f"File {filepath} not found."}
-        
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
-        
-    suggestions = []
-    
-    # Identify route handlers (req, res, next)
-    route_matches = re.findall(r"(?:const|async)\s+(.*?)\s*=\s*(?:async\s*)?\((?:req,\s*res|req,\s*res,\s*next)\)\s*=>\s*{", content)
-    for handler in route_matches:
-        suggestions.append({
-            "handler": handler,
-            "type": "route_handler",
-            "suggestion": f"Add `console.log('// [DEBUG] Processing request in {handler}:', req.body);` at the start."
-        })
-        
-    # Identify database calls (await Model.find, etc.)
-    db_matches = re.findall(r"await\s+(.*?)\.(find|findOne|findById|create|update|delete|save)\((.*?)\)", content)
-    for model, action, params in db_matches:
-        suggestions.append({
-            "model": model,
-            "action": action,
-            "type": "db_query",
-            "suggestion": f"Add `console.log('// [DEBUG] DB {action} on {model} with:', {params});` before the await."
-        })
-        
-    # Check for res.json() or res.send()
-    res_matches = re.findall(r"res\.(json|send|status)\((.*?)\)", content)
-    for method, data in res_matches:
-        suggestions.append({
-            "method": method,
-            "type": "api_response",
-            "suggestion": f"Add `console.log('// [DEBUG] API response ({method}):', {data});` before the response is sent."
-        })
-        
-    if not suggestions:
-        suggestions.append({
+MARKER = "// [DEBUG]"
+
+# (type, regex matched per line, where to insert, snippet).
+# Snippet placeholders: {name} = first captured group, {L} = line number.
+RULES = [
+    ('handler', r"(?:(?:const|let)\s+(\w+)\s*=\s*(?:async\s*)?\(?\s*req\s*,\s*res|function\s+(\w+)\s*\(\s*req\s*,\s*res)", 'first line inside the handler', "console.log('[DEBUG] {name}', { params: req.params, query: req.query, body: req.body })"),
+    ('route', r"\b(?:router|app)\.(?:get|post|put|patch|delete|use)\(\s*['\"`]([^'\"`]+)", 'inside the first middleware/handler of this route', "console.log('[DEBUG] hit {name}', req.method, req.originalUrl)"),
+    ('db-call', r"\bawait\s+(\w+)\.(?:find|findOne|findById|findByIdAndUpdate|findOneAndUpdate|create|insertMany|updateOne|updateMany|deleteOne|deleteMany|save|aggregate)\b", 'line after the await', "console.log('[DEBUG] {name} query done @L{L}')"),
+    ('response', r"\bres\.(?:status\(\d+\)\.)?(?:json|send)\(", 'line before the response', "console.log('[DEBUG] sending response @L{L}', res.statusCode)"),
+    ('next', r"\bnext\((?!\s*err)", 'line before next()', "console.log('[DEBUG] next() @L{L}')"),
+    ('catch', r"\bcatch\s*\((\w+)\)", 'first line inside the catch', "console.log('[DEBUG] caught', {name}.message, {name}.stack)"),
+]
+
+
+def suggest(path):
+    if not os.path.isfile(path):
+        return {"error": f"File not found: {path}"}
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        lines = fh.read().splitlines()
+
+    found = []
+    for idx, line in enumerate(lines, start=1):
+        if MARKER in line:
+            continue  # already instrumented
+        for kind, regex, insert, snippet in RULES:
+            m = re.search(regex, line)
+            if not m:
+                continue
+            name = next((g for g in m.groups() if g), kind)
+            found.append({
+                "line": idx,
+                "type": kind,
+                "insert": insert,
+                "snippet": snippet.replace("{name}", name).replace("{L}", str(idx)) + "; " + MARKER,
+            })
+
+    found.sort(key=lambda s: s["line"])
+    if not found:
+        return [{
+            "line": 1,
             "type": "general",
-            "suggestion": "Add `console.log('// [DEBUG] Middleware executed');` at the top of the file."
-        })
-        
-    return suggestions
+            "insert": "top of file",
+            "snippet": "console.log('[DEBUG] reached', __filename); " + MARKER,
+        }]
+    return found
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "No file path provided. Usage: python suggest_logs.py <file_path>"}))
+    if len(sys.argv) != 2:
+        print(json.dumps({"error": "Usage: python suggest_logs.py <file>"}))
         sys.exit(1)
-        
-    file_path = sys.argv[1]
-    result = suggest_express_logs(file_path)
+    result = suggest(sys.argv[1])
     print(json.dumps(result, indent=2))
+    sys.exit(1 if isinstance(result, dict) else 0)
