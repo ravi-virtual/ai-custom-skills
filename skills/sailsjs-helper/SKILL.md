@@ -12,6 +12,8 @@ description: >
 
 # Sails.js Helper Creator
 
+> **Conventions this skill assumes:** constants in `sails.config.constants`, errors reported to SQS via `sails.helpers.sendMessage`, and the "log, then `exits.success(false)`" failure convention. Confirm these exist in the project first. For helpers whose callers must tell "legitimately false" apart from "failed", return an object such as `{ ok, data }` or declare an `error` exit instead of overloading `false`, and tell the user why.
+
 Creates a single, production-ready Sails.js helper file at `api/helpers/your-helper-name.js`.
 
 ---

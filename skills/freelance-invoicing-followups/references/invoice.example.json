@@ -1,0 +1,19 @@
+{
+  "invoice_number": "2026-014",
+  "issue_date": "2026-11-17",
+  "due_days": 7,
+  "currency": "USD",
+  "freelancer": { "name": "Alex Doe", "business": "Alex Doe Software", "address": "1 Example Street, Sample City", "email": "alex@example.com", "tax_id": "TAX-0000" },
+  "client": { "name": "Jane Smith", "company": "Acme Co", "address": "2 Client Road, Sample Town", "email": "jane@example.com" },
+  "items": [
+    { "description": "Diagnosis and plan (milestone 1)", "quantity": 1, "unit": "fixed", "rate": 300 },
+    { "description": "Development: coupon fix and tests", "quantity": 7.5, "unit": "hours", "rate": 85 }
+  ],
+  "discount_percent": 0,
+  "tax_percent": 10,
+  "tax_label": "VAT",
+  "deposit_paid": 90,
+  "payment": { "methods": ["Bank transfer: IBAN XX00 0000 0000 0000", "PayPal: alex@example.com"], "reference": "Invoice 2026-014" },
+  "late_fee_note": "Payment is due within 7 days of the issue date. Late payments may incur interest as stated in the scope of work.",
+  "notes": "Thank you for your business."
+}

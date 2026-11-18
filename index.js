@@ -92,7 +92,8 @@ function listSkills() {
     for (const skill of catSkills) {
       const srcExists = fs.existsSync(path.join(skillsSourceDir, skill.name, 'SKILL.md'));
       const tag = srcExists ? ok('●') : warn('○');
-      console.log(`    ${tag}  ${bold(skill.name.padEnd(28))} ${dim(skill.description.slice(0, 60) + '…')}`);
+      const blurb = skill.summary || (skill.description.length > 70 ? skill.description.slice(0, 70) + '…' : skill.description);
+      console.log(`    ${tag}  ${bold(skill.name.padEnd(32))} ${dim(blurb)}`);
     }
     console.log('');
   }
@@ -131,13 +132,20 @@ function showSkillInfo(name) {
   const resources = fs.existsSync(path.join(skillDir, 'resources'))
     ? fs.readdirSync(path.join(skillDir, 'resources'))
     : [];
+  const listDir = (sub) => (fs.existsSync(path.join(skillDir, sub)) ? fs.readdirSync(path.join(skillDir, sub)) : []);
+  const references = listDir('references');
+  const assets = listDir('assets');
 
   console.log(`\n${bold('Skill:')} ${col('cyan', skill.name)}\n`);
   console.log(`  ${bold('Category:')}    ${skill.category || 'N/A'}`);
+  if (skill.summary) console.log(`  ${bold('Summary:')}     ${skill.summary}`);
   console.log(`  ${bold('SKILL.md:')}    ${hasFile ? ok('✔ present') : warn('✖ missing')}`);
   if (scripts.length)   console.log(`  ${bold('Scripts:')}     ${scripts.join(', ')}`);
   if (examples.length)  console.log(`  ${bold('Examples:')}    ${examples.join(', ')}`);
   if (resources.length) console.log(`  ${bold('Resources:')}   ${resources.join(', ')}`);
+  if (references.length) console.log(`  ${bold('References:')}  ${references.join(', ')}`);
+  if (assets.length)    console.log(`  ${bold('Assets:')}      ${assets.join(', ')}`);
+  if (skill.requires && skill.requires.length) console.log(`  ${bold('Requires:')}    ${skill.requires.join(', ')} ${dim('(installed automatically)')}`);
   console.log(`\n  ${bold('Description:')}`);
   console.log(`  ${dim(skill.description)}\n`);
   console.log(dim(`  To install: npx ai-custom-skills install ${skill.name}\n`));
@@ -159,7 +167,21 @@ function installSkills(target) {
           console.log(dim('   Run: npx ai-custom-skills list  to see all available skills.'));
           process.exit(1);
         }
-        return [found];
+        // Include the skills it depends on (e.g. mern-stack-project needs backend-expressjs and frontend-reactjs).
+        const picked = new Map();
+        const add = (skill) => {
+          if (picked.has(skill.name)) return;
+          picked.set(skill.name, skill);
+          for (const dep of skill.requires || []) {
+            const depSkill = manifest.skills.find(s => s.name === dep);
+            if (depSkill) add(depSkill);
+          }
+        };
+        add(found);
+        if (picked.size > 1) {
+          console.log(dim(`  "${target}" requires: ${[...picked.keys()].filter(n => n !== target).join(', ')}`));
+        }
+        return [...picked.values()];
       })();
 
   console.log(`\n${bold('Installing')} ${col('cyan', installAll ? 'all skills' : `"${target}"`)} → ${col('yellow', destBase)}\n`);

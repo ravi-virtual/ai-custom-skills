@@ -1,55 +1,59 @@
 ---
 name: debug-sailsjs-error
-description: Specialist skill for debugging Sails.js backend applications. Use this skill when the user encounters Sails.js-specific errors such as Waterline ORM issues, action/helper failures, policy blocks, or route misconfigurations. This skill implements a "Trace, Solve, Clean" workflow to ensure issues are resolved systematically and all temporary debugging code is removed.
+description: Debugs Sails.js backend problems with a Reproduce, Trace, Solve, Clean workflow that guarantees temporary logging is removed afterwards. Use for Waterline errors (E_UNIQUE, E_INVALID_CRITERIA, AdapterError, E_NOT_FOUND), actions or helpers that hang or hit missing exits, E_MISSING_OR_INVALID_PARAMS, policy blocks (E_UNAUTHENTICATED, E_FORBIDDEN), route or blueprint conflicts, helpers not found, and errors printed by sails lift. Use it even when the user only pastes a Sails stack trace.
 ---
 
-# Debug-SailsJS-Error
+# Debug Sails.js Errors
 
-A specialized skill for identifying and resolving issues in Sails.js backends with a clean-up guarantee.
+Fix the root cause, prove it with a real request, and leave no debugging scaffolding behind.
 
-## Core Workflow: Trace, Solve, Clean
+## Workflow: Reproduce, Trace, Solve, Clean
 
-Whenever you encounter a Sails.js error (Waterline errors, action crashes, policy failures, route issues, etc.), you MUST follow this three-step process:
+### 0. Reproduce
+- Capture the failing request (method, URL, headers without secrets, body) and replay it with `curl`.
+- Read the `sails lift` output for the first error and its stack. Note the Sails version (`package.json`) and whether the action is a classic controller (`req, res`) or an actions2 file (`inputs, exits`).
 
-### 1. Trace (Identify Root Cause)
+### 1. Trace
+1. Match the message: `python scripts/analyze_error.py "<error text>"` (long logs: `--file`).
+2. Get insertion points: `python scripts/suggest_logs.py api/controllers/meeting/terminate.js`. It handles actions, controllers, helpers, Waterline calls, exits, lifecycle callbacks and policies, with line numbers.
+3. Insert tagged logs: `console.log('[DEBUG] inputs', inputs); // [DEBUG]`. Group several lines with `// [DEBUG:START]` ... `// [DEBUG:END]`.
+   - **Actions/helpers:** log `inputs` at the top of `fn` and the value before each exit.
+   - **Models:** log `valuesToSet` inside lifecycle callbacks.
+   - **Policies:** log `req.method`, `req.path` and the user id before `proceed()`.
+4. **Never log secrets** (tokens, passwords, session ids). Log presence or ids.
+5. Replay the request and find the first step that deviates.
 
-- **Analyze**: Inspect the Sails.js server log (`sails lift` output) for stack traces or exit codes.
-- **Python Assistance**: Run `scripts/analyze_error.py "<error_message>"` to get targeted advice on the specific Sails.js/Waterline error pattern.
-- **Instrument**: If the root cause isn't immediately clear, run `scripts/suggest_logs.py <file_path>` to identify strategic logging points in actions or helpers.
-- **Log**: Add temporary `console.log` statements prefixed with `// [DEBUG]` to trace inputs, outputs, and database query results.
-  - **In Actions**: Log `inputs` at the top of `fn`, and log the result just before calling `exits.success()` or `exits.error()`.
-  - **In Helpers**: Log `inputs` at the start of `fn` and log the return value before `return`.
-  - **In Models**: Add logs inside lifecycle callbacks (`beforeCreate`, `afterCreate`, etc.) to verify data before/after DB operations.
+### 2. Solve
+- Fix the root cause (table below), then replay the original request and one invalid-input case. Check the status code, response shape, and that `sails lift` shows no unhandled rejections. Run the project's tests.
+- Every code path in `fn` must reach exactly one exit. Classic controllers must send exactly one response.
 
-### 2. Solve (Implement Fix)
+### 3. Clean
+1. Preview: `python scripts/cleanup_logs.py api config --dry-run`
+2. Apply: `python scripts/cleanup_logs.py api config`
+3. Gate: `python scripts/cleanup_logs.py api config --check` must exit 0.
 
-- **Fix**: Apply the necessary code changes based on the identified root cause:
-  - **E_UNIQUE**: Add or fix unique index handling in the model, or adjust the action to handle the error gracefully.
-  - **E_MISSING_OR_INVALID_PARAMS**: Ensure `inputs` in the action/helper match what is being sent. Check type validation.
-  - **Policy Block**: Verify the policy function returns `proceed()` in the success path and `forbid()` or the appropriate exit otherwise.
-  - **Waterline Query Failure**: Check that the criteria object is correct and all referenced attributes exist on the model.
-  - **Action Hang**: Ensure every code path in `fn` calls one of the defined `exits` (e.g., `exits.success()`, `exits.error()`, `exits.notFound()`).
-- **Verify**: The API endpoint should return the expected status code and response body.
-- **Confirm**: Ensure no errors or unhandled rejections appear in the terminal running `sails lift`.
+Only marker-tagged statements are removed. Tags on real code are reported as `REVIEW`; resolve those by hand. The project's own logging (`sails.log`, SQS error reporters) is never touched. Finish with `git diff`.
 
-### 3. Clean (Remove Instrumentation)
+## Symptom to cause
 
-- **CRITICAL**: After verifying the fix, you MUST remove all `console.log` statements added during Step 1.
-- **Automate**: Run `scripts/cleanup_logs.py <file_path>` on any file that was instrumented to ensure no temporary `// [DEBUG]` logs remain.
-- **Commit**: The final code should be clean and production-ready.
+| Symptom | Usual cause | Fix |
+|---|---|---|
+| `E_UNIQUE` | Duplicate value on a `unique: true` attribute | Catch it, return a 4xx naming the field |
+| `E_MISSING_OR_INVALID_PARAMS` | Caller input does not match the `inputs` contract | Align types/required flags with the caller |
+| `E_INVALID_CRITERIA` | `undefined` in `findOne`/`find` criteria | Validate input before querying |
+| Request hangs | An `fn` branch never calls an exit | Add the missing exit/`return` |
+| "Cannot call an exit after the machine has already exited" | Exit called twice | `return exits.success(...)` |
+| `E_UNAUTHENTICATED` / `E_FORBIDDEN` | Policy rejected (token/session/role) | Check header, session, policy logic and `config/policies.js` |
+| `sails.helpers.x is not a function` | File-name/camelCase mismatch or helpers hook off | `send-email.js` -> `sails.helpers.sendEmail` |
+| Custom route ignored | Blueprint or earlier route shadows it | Review `config/routes.js` order and blueprint settings |
+| `AdapterError` / `ECONNREFUSED` | Datastore unreachable or misconfigured | Check `config/datastores.js` and the DB service |
 
-## Common Debugging Scenarios
+## Scripts
 
-- **E_UNIQUE**: A uniqueness constraint was violated on a model attribute. Usually caused by duplicate emails, usernames, or other unique fields.
-- **E_MISSING_OR_INVALID_PARAMS**: An action or helper received inputs that don't match the defined `inputs` contract. Check types and required fields.
-- **E_INVALID_CRITERIA**: A Waterline query was called with malformed or missing criteria (e.g. `undefined` id in `.findOne()`).
-- **E_UNAUTHENTICATED / Policy Block**: A policy rejected the request. The user may not be logged in or the session/token is invalid.
-- **Action Hang (No Response)**: The action fn never called an exit. Every code branch MUST call `exits.success()`, `exits.error()`, etc.
-- **`sails.config` undefined**: Accessing config values before `sails` is lifted. Use lifecycle hooks or wait for lift to complete.
-- **Blueprint Route Conflicts**: A custom route or action shadows a blueprint, causing unexpected behavior. Check `config/routes.js`.
+| Script | Purpose |
+|---|---|
+| `scripts/analyze_error.py` | Match error text (arg, `--file`, stdin) to Sails/Waterline patterns |
+| `scripts/suggest_logs.py <file>` | Line-numbered, marker-tagged log snippets |
+| `scripts/cleanup_logs.py <paths> [--dry-run\|--check]` | Remove marker-tagged debug code safely |
 
-## Available Scripts
-
-- `scripts/analyze_error.py <error_message>`: Analyzes Sails.js/Waterline error strings and provides specific fix suggestions.
-- `scripts/suggest_logs.py <file_path>`: Suggests where to add `console.log` inside Sails.js action/helper/model files.
-- `scripts/cleanup_logs.py <file_path>`: Automatically removes all temporary `// [DEBUG]` console.log statements from a file.
+Python 3.8+, no packages needed.

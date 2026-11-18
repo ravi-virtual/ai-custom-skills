@@ -1,66 +1,133 @@
 {
-  "version": "1.0.0",
-  "updated": "2026-03-29",
+  "version": "1.2.0",
+  "updated": "2026-11-17",
   "skills": [
     {
       "name": "mern-stack-project",
-      "description": "Use this skill whenever the user asks to scaffold, design, build, or review any part of a MERN stack application intended for production. Triggers include: \"create a MERN project\", \"set up folder structure\", \"design the API\", \"build a REST endpoint\", \"add auth\", \"set up Express routes\", \"create a Mongoose model\", \"add middleware\", \"set up error handling\", \"write a controller\", \"add validation\", or any request to generate backend or frontend code within a MERN context. Also trigger when the user shares existing MERN code and asks for a review, refactor, or production-readiness check. Always use this skill even if the user only asks about one part (e.g. just a model or just a route) — the standards here apply to every layer.",
-      "category": "Development"
+      "summary": "Plan and review a full MERN project across both layers",
+      "description": "Plans, scaffolds and reviews a full MERN (MongoDB, Express, React, Node) application at project level - repository layout, the client/server contract (response envelope, auth flow, CORS, env vars), and building a feature across both layers. Use when the user wants to start a MERN project, add a feature that touches both frontend and backend, connect React to an Express API, decide folder structure, or review a whole MERN codebase for production readiness. Layer-specific rules come from backend-expressjs and frontend-reactjs, which this skill depends on. For MERN bugs use debug-mern-stack-error.",
+      "category": "Development",
+      "requires": [
+        "backend-expressjs",
+        "frontend-reactjs"
+      ]
     },
     {
       "name": "frontend-reactjs",
-      "description": "Use this skill whenever the user asks to scaffold, design, build, or review the React frontend of a MERN stack application. Triggers include: \"set up the frontend\", \"create the frontend folder structure\", \"create a React component\", \"set up Redux Toolkit\", \"add a Redux slice\", \"create an API helper\", \"set up React Router\", \"create a custom hook\", \"set up Axios\", \"build a page component\", \"add global state\", or any request to generate React / frontend code. Also trigger when the user shares existing frontend code and asks for a review, refactor, or production-readiness check. Always use this skill even if the user only asks about one part (e.g. just a slice or just a hook) — the standards here apply to every layer of the frontend.",
+      "summary": "React + Redux Toolkit frontend conventions and templates",
+      "description": "Builds and reviews the React (Vite) frontend of a MERN application with Redux Toolkit, a single Axios instance and per-resource API modules, React Router, custom hooks and consistent component conventions. Use when the user asks to scaffold the frontend, create a component, page, hook, Redux slice or API helper, set up routing, Axios or global state, or review React code for production readiness. Apply it even to one small piece (a slice, a hook) so the code stays consistent. For project-level decisions or full-stack features use mern-stack-project; for React bugs use debug-reactjs-error.",
       "category": "Development"
     },
     {
       "name": "backend-expressjs",
-      "description": "Production-grade system for the Express / Node.js backend. Use this skill whenever the user asks to scaffold, design, build, extend, or review any part of a backend application. Triggers include: \"add a new API\", \"create a route with middleware\", \"setup constants\", \"design a Mongoose model\", \"build a REST endpoint\", \"add authentication\", or any request to generate Express/Node.js code. Use this skill even for isolated tasks (like adding one route or one constant) to ensure consistency with the established production standards.",
+      "summary": "Production Express/Node API conventions and templates",
+      "description": "Builds and reviews production-grade Express / Node.js backends with Mongoose or PostgreSQL, following one consistent set of conventions for folder structure, naming, constants, a standard JSON response envelope, express-validator validation, JWT auth middleware, error handling and controllers. Use when the user asks to add or change an API endpoint, route, middleware, controller, model, validator or constant, to scaffold or review an Express backend, or to add authentication. Apply it even to small isolated tasks (one route, one constant) so the project stays consistent. For Sails.js backends use sailsjs-api; for React code use frontend-reactjs.",
       "category": "Development"
     },
     {
-      "name": "debug-reactjs-error",
-      "description": "Specialist skill for debugging React.js applications. Use this skill when the user encounters errors, bugs, or unexpected behavior in their React frontend. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically and temporary debugging code is removed.",
-      "category": "Debugging"
-    },
-    {
-      "name": "debug-expressjs-error",
-      "description": "Specialist skill for debugging Express.js backend applications. Use this skill when the user encounters server-side errors, API failures, middleware issues, or database connectivity problems. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically and temporary debugging code is removed.",
-      "category": "Debugging"
-    },
-    {
-      "name": "debug-mern-stack-error",
-      "description": "Specialist skill for debugging full-stack MERN (MongoDB, Express, React, Node) applications. Use this skill when the user encounters integration issues, authentication flows failing across layers, or general full-stack bugs. This skill implements a \"Trace, Solve, Clean\" workflow to ensure issues are resolved systematically across frontend and backend.",
-      "category": "Debugging"
-    },
-    {
-      "name": "debug-sailsjs-error",
-      "description": "Specialist skill for debugging Sails.js backend applications. Use this skill when the user encounters Sails.js-specific errors such as Waterline ORM issues (E_UNIQUE, E_INVALID_CRITERIA), action/helper failures (missing exits, E_MISSING_OR_INVALID_PARAMS), policy blocks (E_UNAUTHENTICATED, E_FORBIDDEN), or route misconfigurations. This skill implements a \"Trace, Solve, Clean\" workflow: identify the root cause, add targeted console.log statements, apply the fix, then remove all debug logs.",
-      "category": "Debugging"
-    },
-    {
       "name": "sailsjs-api",
-      "description": "Use this skill whenever the user wants to create a new API endpoint in Sails.js. Triggers include: any mention of \"create API\", \"new endpoint\", \"add route\", \"controller action\", \"sails API\", or requests to add new functionality to a Sails.js backend. This skill covers the FULL flow: controller action, sails helper, model validation, route registration, and policy setup.",
+      "summary": "Full Sails.js API endpoint: action, helper, validation, route, policy",
+      "description": "Use this skill whenever the user wants to create a new API endpoint in Sails.js. Triggers include: any mention of \"create API\", \"new endpoint\", \"add route\", \"controller action\", \"sails API\", or requests to add new functionality to a Sails.js backend. This skill covers the FULL flow: controller action, sails helper, model validation, route registration, and policy setup. Always use this skill when the user wants a complete Sails.js API with all its supporting pieces, even if they only mention \"add an API\" or \"create an endpoint\". Do NOT use for helper-only tasks (use sailsjs-helper instead).",
       "category": "Development"
     },
     {
       "name": "sailsjs-helper",
-      "description": "Use this skill whenever the user wants to create a Sails.js helper only — without building a full API endpoint. Triggers include: \"create a helper\", \"add a helper\", \"write a sails helper\", \"new helper function\", or when a user asks to extract logic into a reusable helper. Also trigger when the user mentions a sails helper name and wants to implement it.",
+      "summary": "Reusable Sails.js helper with Redis-first and error-log patterns",
+      "description": "Use this skill whenever the user wants to create a Sails.js helper only \u2014 without building a full API endpoint. Triggers include: \"create a helper\", \"add a helper\", \"write a sails helper\", \"new helper function\", or when a user asks to extract logic into a reusable helper. Also trigger when the user mentions a sails helper name and wants to implement it. This skill covers helper structure, constants destructuring, Redis-first patterns, exit conventions, SQS error logging, and file/calling-name conventions. Use sailsjs-api instead when a full controller action, route, and validation is also needed.",
       "category": "Development"
     },
     {
-      "name": "skill-creator",
-      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "name": "python-project-setup",
+      "summary": "Modern Python project: uv, ruff, pytest, mypy, CI (verified scaffold)",
+      "description": "Creates and maintains modern, production-ready Python projects - src layout, a single pyproject.toml, uv for environments and lockfile, ruff for lint and format, pytest, strict mypy, pre-commit and GitHub Actions CI. Use when the user wants to start a new Python project, app, library, CLI or AI/LLM service, standardise or modernise an existing one (requirements.txt, setup.py, black/flake8/pip migration), add tests, linting, typing or CI, or asks how to structure a Python repository. Scaffolds a verified skeleton with one command.",
       "category": "Development"
+    },
+    {
+      "name": "debug-reactjs-error",
+      "summary": "Reproduce, trace, fix and clean up React bugs",
+      "description": "Debugs React.js frontend problems with a Reproduce, Trace, Solve, Clean workflow that guarantees temporary logging is removed afterwards. Use for white screens, console errors, invalid or conditional hook calls, infinite re-renders, stale closures, useEffect dependency bugs, Redux/Context state not updating, hydration mismatches, and unexpected re-renders. Use it even when the user only pastes an error or says \"my component is not working\" without mentioning debugging. For bugs that span React and the API, use debug-mern-stack-error instead.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-expressjs-error",
+      "summary": "Reproduce, trace, fix and clean up Express bugs",
+      "description": "Debugs Express.js / Node.js backend problems with a Reproduce, Trace, Solve, Clean workflow that guarantees temporary logging is removed afterwards. Use for 500 errors, requests that hang, ERR_HTTP_HEADERS_SENT, EADDRINUSE, middleware order bugs, req.body undefined, async errors that crash the process, JWT/auth failures, and Mongoose/MongoDB errors (validation, CastError, duplicate key, connection). Use it even when the user only pastes a stack trace. For issues that span React and Express, use debug-mern-stack-error instead.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-mern-stack-error",
+      "summary": "Trace a bug across React, Express and MongoDB",
+      "description": "Debugs full-stack MERN (MongoDB, Express, React, Node) bugs that cross the client/server boundary, using a Reproduce, Trace, Solve, Clean workflow that guarantees temporary logging is removed in both layers. Use for CORS errors, \"Network Error\", 401/403/404/500 seen from React, cookie or JWT flows that fail between login and the next request, dev-proxy problems, an HTML page returned where JSON was expected, and data that saves but does not show in the UI. Use it when the symptom appears in the browser but the cause might be on either side. For a bug clearly confined to one layer use debug-reactjs-error or debug-expressjs-error.",
+      "category": "Debugging"
+    },
+    {
+      "name": "debug-sailsjs-error",
+      "summary": "Debug Sails.js actions, helpers, policies and Waterline",
+      "description": "Debugs Sails.js backend problems with a Reproduce, Trace, Solve, Clean workflow that guarantees temporary logging is removed afterwards. Use for Waterline errors (E_UNIQUE, E_INVALID_CRITERIA, AdapterError, E_NOT_FOUND), actions or helpers that hang or hit missing exits, E_MISSING_OR_INVALID_PARAMS, policy blocks (E_UNAUTHENTICATED, E_FORBIDDEN), route or blueprint conflicts, helpers not found, and errors printed by sails lift. Use it even when the user only pastes a Sails stack trace.",
+      "category": "Debugging"
     },
     {
       "name": "prompt-writing",
-      "description": "Create, optimize, and refine high-quality AI prompts for various tasks. Use when the user wants to build a prompt for a chatbot, research agent, code assistant, or specialized task, or when they need to improve an existing prompt for better performance, accuracy, or format adherence.",
+      "summary": "Write, test and improve LLM prompts",
+      "description": "Writes, rewrites and tests high-quality prompts for LLMs - system prompts, chatbot and agent instructions, extraction/classification prompts, coding-assistant prompts and reusable prompt templates. Use when the user asks to create a prompt, improve or debug a prompt that gives inconsistent or wrong output, make output follow a format (JSON, table, style), add few-shot examples, or turn a vague idea into a robust prompt. Delivers the prompt plus a short rationale and test cases. Not for designing multi-step agent pipelines (use agent-workflow-creator).",
       "category": "Productivity"
     },
     {
       "name": "agent-workflow-creator",
-      "description": "Design, generate, document, and validate complete agent workflows for any task or domain. Use when the user wants to build an agent, design a workflow, automate a process, create a pipeline, map out task steps for AI execution, or define agent roles and tool sequences for a multi-step AI process.",
+      "summary": "Design and validate AI agent workflows (YAML, Mermaid)",
+      "description": "Designs and validates AI agent workflows and automation pipelines - decomposes a goal into steps, assigns tools and agent roles, defines branching, error handling and human checkpoints, and produces a step table, Mermaid diagram and a validated YAML spec. Use when the user wants to plan or document how an agent, LLM pipeline, multi-agent system or business process should run (\"design a workflow for X\", \"what steps does an AI need for Y\", \"agent architecture for Z\"). Use ai-workflow-builder afterwards to implement and run the spec; use prompt-writing for a single prompt.",
       "category": "Productivity"
+    },
+    {
+      "name": "ai-workflow-builder",
+      "summary": "Run a workflow spec as tested Python, or map it to n8n/Make",
+      "description": "Implements an AI workflow as working software - a runnable, tested Python project that executes an agent-workflow-creator YAML spec (LLM steps via the Anthropic API, tool steps, retries, fallbacks, branching, human approval gates, logging), or a mapped no-code build in n8n, Make or Zapier. Use when the user wants to actually build, wire up, run or automate an LLM pipeline or agent (not just design it), add tool use or an agent loop, make a prompt chain reliable, or turn a process into something that runs on a schedule or webhook. Pair with agent-workflow-creator, which designs and validates the spec first.",
+      "category": "Productivity",
+      "requires": [
+        "agent-workflow-creator"
+      ]
+    },
+    {
+      "name": "skill-creator",
+      "summary": "Create, test and optimise new skills",
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "category": "Development"
+    },
+    {
+      "name": "qa-test-strategy",
+      "summary": "Risk-based test plans, test design, bug reports, release checks",
+      "description": "Plans and performs manual and automated QA - risk-based test strategy and test plans, test case design (boundary values, equivalence classes, decision tables, state transitions), exploratory test charters, regression and release checklists, defect reports with severity and priority, and test summary reports. Use when the user asks how to test a feature or product, to write a test plan or test cases, to review requirements for testability, to triage or write a bug report, to decide what to automate, or to sign off a release. For Playwright browser automation specifically use playwright-e2e-testing.",
+      "category": "QA"
+    },
+    {
+      "name": "playwright-e2e-testing",
+      "summary": "Playwright e2e setup, stable tests, CI and flaky-test triage",
+      "description": "Sets up, writes, debugs and stabilises Playwright end-to-end tests in TypeScript - config, role-based locators, web-first assertions, fixtures and page objects, login reuse with storageState, API seeding, network mocking, CI with traces and reports, and flaky-test triage. Use when the user wants browser or e2e tests for a web app, asks to add Playwright, fix a failing or flaky Playwright test, speed up a suite, test a login or checkout flow, or run browser tests in CI. For test planning and case design use qa-test-strategy first.",
+      "category": "QA"
+    },
+    {
+      "name": "remotion-video-creator",
+      "summary": "Make MP4 videos from a storyboard with React and Remotion",
+      "description": "Creates videos from a text brief by writing React code and rendering it to MP4 with Remotion - explainers, product demos, social clips, animated text and charts, captioned videos, templated or data-driven batches. Covers brief, storyboard, pacing checks, a scaffolded storyboard-driven project, per-scene still previews for visual review, rendering, and ffmpeg post-processing (trim, concat, captions, audio, vertical crops, compression). Use when the user asks to make, generate, animate or render a video, motion graphics, a title or lower-third, a slideshow or social media clip with code. Not for filming or editing live footage by hand, or photoreal AI video generation.",
+      "category": "Content"
+    },
+    {
+      "name": "freelance-proposal-writer",
+      "summary": "Screen job posts and write tailored proposals",
+      "description": "Screens freelance job posts and writes tailored proposals and cover letters for platforms such as Upwork, Fiverr, Freelancer, LinkedIn or direct inquiries - fit and red-flag analysis, bid or skip advice, clarifying questions, pricing approach, a client-focused proposal with proof and a clear next step, and a pre-send checklist. Use when the user pastes a job post or client message and wants a proposal, asks whether a job is worth bidding on, wants to improve a proposal that is not getting replies, or wants reusable proposal templates. Drafts for a human to review and send; never auto-submits.",
+      "category": "Freelance"
+    },
+    {
+      "name": "freelance-client-onboarding",
+      "summary": "Scope of work, intake, kickoff and change requests",
+      "description": "Onboards a new freelance client from \"yes\" to a running project - intake questionnaire, scope of work with deliverables, exclusions, assumptions, milestones and payment terms, kickoff agenda, welcome email, change-request form and wrap-up checklist, all generated from one project file. Use when the user won a job or signed a client and needs to define scope, write a statement of work, set up payment milestones, prepare a kickoff, handle scope creep with change requests, or close a project cleanly. Produces working-agreement documents, not legal advice or a contract.",
+      "category": "Freelance"
+    },
+    {
+      "name": "freelance-invoicing-followups",
+      "summary": "Invoices with exact math and payment reminders",
+      "description": "Creates correct freelance invoices and manages getting paid - invoices from time or milestones with exact rounding, discounts, tax and deposits as printable HTML or Markdown, payment terms, a reminder cadence with ready-to-send messages for early, due, overdue, final and escalation stages, handling disputes, and record keeping. Use when the user needs to bill a client, turn hours or milestones into an invoice, check invoice math, chase an unpaid invoice, write a polite or firm payment reminder, set late-fee or deposit terms, or review which invoices are outstanding. Not tax or legal advice.",
+      "category": "Freelance"
     }
   ]
 }
